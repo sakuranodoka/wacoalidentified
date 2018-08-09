@@ -1,42 +1,44 @@
 package com.example.administrator.wacoalidentified
 
 import android.Manifest
-import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.ContentValues
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.support.design.widget.BottomNavigationView
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
-import android.widget.Button
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.api.GoogleApiClient
-import com.google.android.gms.common.api.Status
 import kotlinx.android.synthetic.main.activity_main.*
 import android.support.v4.app.ActivityCompat
 import com.google.android.gms.location.*
-import com.google.android.gms.location.LocationServices.getFusedLocationProviderClient
-import android.support.annotation.NonNull
-import com.google.android.gms.tasks.OnFailureListener
 import com.google.android.gms.tasks.OnSuccessListener
-import android.os.Looper
-import android.support.v4.content.ContextCompat
-import android.support.v4.util.DebugUtils
+import android.provider.MediaStore
 import android.support.v7.app.AlertDialog
-import com.google.android.gms.location.LocationResult
+import butterknife.ButterKnife
+import com.facebook.drawee.backends.pipeline.Fresco
+import com.facebook.imagepipeline.common.ResizeOptions
+import com.facebook.imagepipeline.request.ImageRequestBuilder
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.SettingsClient
 import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.gms.location.LocationRequest
-import java.security.Permission
-import java.util.*
+import com.karumi.dexter.Dexter
+import com.karumi.dexter.PermissionToken
+import com.karumi.dexter.listener.PermissionDeniedResponse
+import com.karumi.dexter.listener.PermissionGrantedResponse
+import com.karumi.dexter.listener.PermissionRequest
+import com.karumi.dexter.listener.single.PermissionListener
+import java.io.File
 
 
 class Main : AppCompatActivity(), GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
@@ -54,14 +56,6 @@ class Main : AppCompatActivity(), GoogleApiClient.ConnectionCallbacks, GoogleApi
     private var locationManager: LocationManager? = null
 
     override fun onConnected(p0: Bundle?) {
-
-//        this.createLocationRequest()
-
-//        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-//            if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
-//                return
-//            }
-//        }
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return
@@ -226,7 +220,7 @@ class Main : AppCompatActivity(), GoogleApiClient.ConnectionCallbacks, GoogleApi
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-//        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        ButterKnife.bind(this)
 
         googleApiClient = GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
@@ -238,42 +232,14 @@ class Main : AppCompatActivity(), GoogleApiClient.ConnectionCallbacks, GoogleApi
 
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener)
 
-        val button : Button = findViewById(R.id.geoGetButton) as Button
-        button.setOnClickListener {
-            try {
-                startLocationUpdates()
-            }
-            catch (e : SecurityException) {
-            }
-        }
-
         checkLocation()
 
-//        locationRequest = LocationRequest()
-//        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
-//        locationRequest.setInterval(5000)
-//        locationRequest.setFastestInterval(5000)
-//
-//        initGoogleAPIClient()
-
-//        createLocationRequest()
-//        createLocationSettings()
-
-//        locationCallback = object : LocationCallback() {
-//            override fun onLocationResult(locationResult: LocationResult?) {
-//                locationResult ?: return
-//                for (location in locationResult.locations){
-//                    // Update UI with location data
-//                    // ...
-//                    Log.i("LOCATION_RESULT", location.latitude.toString()+" "+location.longitude.toShort())
-//                }
-//            }
-//        }
+        fab_capture?.setOnClickListener { validatePermissions() }
     }
 
     private fun checkLocation(): Boolean {
         if(!isLocationEnabled())
-            showAlert();
+            showAlert()
         return isLocationEnabled()
     }
 
@@ -340,5 +306,126 @@ class Main : AppCompatActivity(), GoogleApiClient.ConnectionCallbacks, GoogleApi
         val tt = Math.acos(t1 + t2 + t3)
 
         return 6366000 * tt
+    }
+
+    // Capture
+    private fun validatePermissions() {
+        Dexter.withActivity(this)
+                .withPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                .withListener(object: PermissionListener {
+                    override fun onPermissionGranted(
+                            response: PermissionGrantedResponse?) {
+                        launchCamera()
+                    }
+
+                    override fun onPermissionRationaleShouldBeShown(
+                            permission: PermissionRequest?,
+                            token: PermissionToken?) {
+                        AlertDialog.Builder(applicationContext)
+                                .setTitle(
+                                        "Permission Request")
+                                .setMessage(
+                                        "Permission allow?")
+                                .setNegativeButton(
+                                        android.R.string.cancel,
+                                        { dialog, _ ->
+                                            dialog.dismiss()
+                                            token?.cancelPermissionRequest()
+                                        })
+                                .setPositiveButton(android.R.string.ok,
+                                        { dialog, _ ->
+                                            dialog.dismiss()
+                                            token?.continuePermissionRequest()
+                                        })
+                                .setOnDismissListener({
+                                    token?.cancelPermissionRequest() })
+                                .show()
+                    }
+
+                    override fun onPermissionDenied(
+                            response: PermissionDeniedResponse?) {
+                        Log.i("Error", "Permission Denied")
+//                        Snackbar.make(mainContainer!!,
+//                                "Permission Denied",
+//                                Snackbar.LENGTH_LONG)
+//                                .show()
+                    }
+                })
+                .check()
+    }
+
+//    var photo : String = ""
+
+    private var mCurrentPhotoPath : String = ""
+
+//    var TAKE_PHOTO_REQUEST : Int = 3223
+    private val REQUEST_IMAGE_CAPTURE = 1273
+
+
+    private fun launchCamera() {
+        val values = ContentValues(1)
+        values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpg")
+        val fileUri = contentResolver
+                .insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                        values)
+        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        if(intent.resolveActivity(packageManager) != null) {
+            this.mCurrentPhotoPath = fileUri.toString()
+
+//            Log.i("EREREr", this.mCurrentPhotoPath)
+
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri)
+//            intent.putExtra("ASX", mCurrentPhotoPath)
+//            intent.putExtra("photoPath", mCurrentPhotoPath)
+//            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION
+//                    or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+
+            startActivityForResult(intent, REQUEST_IMAGE_CAPTURE)
+        } else {
+            Log.i("LANCH_CAMERA", "ERROR")
+        }
+    }
+
+    // ถ่ายเสร็จ
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+
+        if (resultCode == Activity.RESULT_OK
+                && requestCode == REQUEST_IMAGE_CAPTURE) {
+
+            processCapturedPhoto(data)
+        } else {
+            super.onActivityResult(requestCode, resultCode, data)
+        }
+    }
+
+    private fun processCapturedPhoto(data: Intent?) {
+
+        Log.i("EREREr", data!!.extras.toString())
+        //        val cursor = contentResolver.query(Uri.parse("content://media/external/images/media/395"),
+        val cursor = contentResolver.query(Uri.parse(this.mCurrentPhotoPath),
+                Array(1) {android.provider.MediaStore.Images.ImageColumns.DATA},
+                null, null, null)
+
+        if (cursor !== null) {
+            cursor.moveToFirst()
+            val photoPath = cursor.getString(0)
+            cursor.close()
+            val file = File(photoPath)
+            val uri = Uri.fromFile(file)
+
+            val height = resources.getDimensionPixelSize(R.dimen.photo_height)
+            val width = resources.getDimensionPixelSize(R.dimen.photo_width)
+
+            val request = ImageRequestBuilder.newBuilderWithSource(uri)
+                    .setResizeOptions(ResizeOptions(width, height))
+                    .build()
+
+            val controller = Fresco.newDraweeControllerBuilder()
+                    .setOldController(imgv_photo?.controller)
+                    .setImageRequest(request)
+                    .build()
+
+            imgv_photo?.controller = controller
+        }
     }
 }
