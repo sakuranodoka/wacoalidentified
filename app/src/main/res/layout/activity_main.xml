@@ -1,40 +1,137 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/container"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".Main">
 
-   <TextView
-       android:id="@+id/message"
+<android.support.constraint.ConstraintLayout
+   xmlns:android="http://schemas.android.com/apk/res/android"
+   xmlns:app="http://schemas.android.com/apk/res-auto"
+   xmlns:tools="http://schemas.android.com/tools"
+   android:layout_width="match_parent"
+   android:layout_height="match_parent"
+
+   tools:context=".Main">
+
+   <ScrollView
+       android:layout_width="match_parent"
+       android:layout_height="match_parent"
+
+       android:id="@+id/scrollView"
+
+       app:layout_constraintLeft_toLeftOf="parent"
+       app:layout_constraintRight_toRightOf="parent">
+
+      <android.support.constraint.ConstraintLayout
+       android:id="@+id/container"
+
+       android:layout_width="match_parent"
+       android:layout_height="wrap_content">
+
+         <TextView
+             android:id="@+id/message"
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             android:layout_marginLeft="@dimen/activity_horizontal_margin"
+             android:layout_marginStart="@dimen/activity_horizontal_margin"
+             android:layout_marginTop="@dimen/activity_vertical_margin"
+             android:text="@string/title_home"
+
+             android:textColor="#ffffff"
+
+             app:layout_constraintLeft_toLeftOf="parent"
+             app:layout_constraintTop_toTopOf="parent"/>
+
+         <TextView
+             android:id="@+id/header"
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             android:layout_marginTop="@dimen/activity_vertical_margin"
+             android:text="เช็คอินด้วยรูปภาพของท่าน"
+             android:textSize="20sp"
+
+             android:drawableStart="@drawable/ic_location_24dp"
+             android:drawablePadding="5dp"
+
+             app:layout_constraintLeft_toLeftOf="parent"
+             app:layout_constraintRight_toRightOf="parent"
+             app:layout_constraintTop_toTopOf="parent"/>
+
+
+         <com.facebook.drawee.view.SimpleDraweeView
+             android:id="@+id/imgv_photo"
+             android:layout_width="@dimen/photo_width"
+             android:layout_height="@dimen/photo_height"
+             android:layout_marginBottom="8dp"
+             android:layout_marginLeft="0dp"
+             android:layout_marginRight="0dp"
+             android:layout_marginTop="24dp"
+
+             app:placeholderImage="@mipmap/global_1889726_640"
+
+             app:failureImageScaleType="center"
+             app:layout_constraintTop_toBottomOf="@id/message"
+             app:layout_constraintLeft_toLeftOf="parent"
+             app:layout_constraintRight_toRightOf="parent"/>
+
+         <EditText
+             android:id="@+id/description"
+             android:layout_width="match_parent"
+             android:layout_height="wrap_content"
+
+             android:layout_marginLeft="30dp"
+             android:layout_marginRight="30dp"
+             android:layout_marginTop="15dp"
+
+             android:background="#00000000"
+
+             android:hint="เขียนคำบรรยายที่นี่"
+             android:textSize="17sp"
+             android:gravity="top"
+             android:textStyle="italic"
+
+             android:textAlignment="center"
+
+             android:focusable="true"
+             android:focusableInTouchMode="true"
+
+             app:layout_constraintLeft_toLeftOf="parent"
+             app:layout_constraintRight_toRightOf="parent"
+
+             app:layout_constraintTop_toBottomOf="@id/imgv_photo"/>
+
+         <Button
+             android:id="@+id/submit"
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             android:layout_margin="15dp"
+             android:clickable="true"
+             android:text="Send"
+             android:textColor="@color/colorPrimary"
+             android:background="@android:color/transparent"
+
+             app:layout_constraintLeft_toLeftOf="parent"
+             app:layout_constraintRight_toRightOf="parent"
+             app:layout_constraintTop_toBottomOf="@id/description"/>
+
+         <!--กลาง-->
+         <!--app:layout_constraintBottom_toBottomOf="parent"-->
+         <!--app:layout_constraintLeft_toLeftOf="parent"-->
+         <!--app:layout_constraintRight_toRightOf="parent"-->
+         <!--app:layout_constraintTop_toTopOf="parent"-->
+
+      </android.support.constraint.ConstraintLayout>
+   </ScrollView>
+
+   <android.support.design.widget.FloatingActionButton
+       android:id="@+id/fab_capture"
        android:layout_width="wrap_content"
        android:layout_height="wrap_content"
-       android:layout_marginLeft="@dimen/activity_horizontal_margin"
-       android:layout_marginStart="@dimen/activity_horizontal_margin"
-       android:layout_marginTop="@dimen/activity_vertical_margin"
-       android:text="@string/title_home"
-       app:layout_constraintLeft_toLeftOf="parent"
-       app:layout_constraintTop_toTopOf="parent"/>
 
-   <com.facebook.drawee.view.DraweeView
-       android:id="@+id/imgv_photo"
-       android:layout_width="@dimen/photo_width"
-       android:layout_height="@dimen/photo_height"
-       android:layout_marginBottom="8dp"
-       android:layout_marginLeft="0dp"
-       android:layout_marginRight="0dp"
-       android:layout_marginTop="24dp"
-
-       app:failureImageScaleType="center"
-       app:layout_constraintBottom_toBottomOf="parent"
-       app:layout_constraintLeft_toLeftOf="parent"
+       android:clickable="true"
+       app:backgroundTint="@color/colorPrimary"
+       android:layout_margin="@dimen/activity_horizontal_margin"
+       app:fabSize="normal"
+       android:src="@drawable/ic_photo_camera_white_24dp"
        app:layout_constraintRight_toRightOf="parent"
-       app:layout_constraintTop_toTopOf="parent"
-
-       app:placeholderImageScaleType="center" />
+       app:layout_constraintBottom_toTopOf="@id/navigation"
+       android:layout_marginTop="172dp" />
 
    <android.support.design.widget.BottomNavigationView
        android:id="@+id/navigation"
@@ -47,19 +144,4 @@
        app:layout_constraintLeft_toLeftOf="parent"
        app:layout_constraintRight_toRightOf="parent"
        app:menu="@menu/navigation"/>
-
-   <android.support.design.widget.FloatingActionButton
-       android:id="@+id/fab_capture"
-       android:layout_width="wrap_content"
-       android:layout_height="wrap_content"
-
-       android:clickable="true"
-       app:backgroundTint="@android:color/white"
-       android:layout_margin="@dimen/activity_horizontal_margin"
-       app:fabSize="normal"
-       android:src="@drawable/ic_launcher_background"
-       app:layout_constraintRight_toRightOf="parent"
-       app:layout_constraintBottom_toTopOf="@id/navigation"
-       android:layout_marginTop="172dp" />
-
 </android.support.constraint.ConstraintLayout>

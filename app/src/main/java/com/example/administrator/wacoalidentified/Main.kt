@@ -1,6 +1,7 @@
 package com.example.administrator.wacoalidentified
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.ContentValues
 import android.content.Context
@@ -23,7 +24,10 @@ import android.support.v4.app.ActivityCompat
 import com.google.android.gms.location.*
 import com.google.android.gms.tasks.OnSuccessListener
 import android.provider.MediaStore
+import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
+import android.view.MotionEvent
+import android.view.View
 import butterknife.ButterKnife
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.imagepipeline.common.ResizeOptions
@@ -32,6 +36,7 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.tasks.OnFailureListener
 import com.karumi.dexter.Dexter
 import com.karumi.dexter.PermissionToken
 import com.karumi.dexter.listener.PermissionDeniedResponse
@@ -39,7 +44,6 @@ import com.karumi.dexter.listener.PermissionGrantedResponse
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.single.PermissionListener
 import java.io.File
-
 
 class Main : AppCompatActivity(), GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
@@ -49,19 +53,21 @@ class Main : AppCompatActivity(), GoogleApiClient.ConnectionCallbacks, GoogleApi
 
     lateinit var locationSettingRequest : LocationSettingsRequest
 
-    var currentLocation : Location? = null
-
     private var fusedLocationClient: FusedLocationProviderClient? = null
 
     private var locationManager: LocationManager? = null
 
     override fun onConnected(p0: Bundle?) {
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return
+//        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+//            Log.i("LOCATION_AV", "ARaiwa")
+//            return
+//        }
+
+        if (ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions( this, Array(1) {android.Manifest.permission.ACCESS_COARSE_LOCATION }, 6335)
         }
 
-        // ...
         startLocationUpdates()
 
         var fusedLocationProviderClient :
@@ -72,6 +78,7 @@ class Main : AppCompatActivity(), GoogleApiClient.ConnectionCallbacks, GoogleApi
                     if (location != null) {
                         // Logic to handle location object
                         Log.i("RESULT_II", location.latitude.toString())
+                        onLocationChanged(location)
                     }
                 })
     }
@@ -86,9 +93,9 @@ class Main : AppCompatActivity(), GoogleApiClient.ConnectionCallbacks, GoogleApi
         if (p0 != null) {
 //            Log.i("LOCATION_UPDATED", p0.latitude.toString())
 
-            val metre = meterDistanceBetweenPoints(p0.latitude.toFloat(), p0.longitude.toFloat(), 13.72F, 100.52F)
+            val metre = meterDistanceBetweenPoints(p0.latitude.toFloat(), p0.longitude.toFloat(), 13.6912532F, 100.5143351F)
 
-            message.setText("Lat" + p0.latitude.toString() + " Long" + p0.longitude.toString() + " Difference:" + metre)
+//            message.setText("Lat: " + p0.latitude.toString() + " ,Long: " + p0.longitude.toString() + "\nDifference: " + metre + " Metre")
         }
     }
 
@@ -152,13 +159,7 @@ class Main : AppCompatActivity(), GoogleApiClient.ConnectionCallbacks, GoogleApi
     }
 
     private fun updateUI() {
-        // Location Update UI
-        if (currentLocation != null) {
-            Log.i("LOCATION_UPDATED ", String.format("Latitude:%f Longitude:%f", currentLocation?.latitude, currentLocation?.longitude))
-            message.setText(String.format("Latitude:%f Longitude:%f", currentLocation?.latitude, currentLocation?.longitude))
-        } else {
-            Log.i("LOCATION_UPDATED ", "NURUPO")
-        }
+
     }
 
     private fun isLocationEnabled(context : Context) : Boolean {
@@ -179,19 +180,17 @@ class Main : AppCompatActivity(), GoogleApiClient.ConnectionCallbacks, GoogleApi
         }
     }
 
-    private lateinit var locationCallback: LocationCallback
-
     protected fun startLocationUpdates() {
+
+        if (ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions( this, Array(1) {android.Manifest.permission.ACCESS_COARSE_LOCATION }, 6335)
+        }
 
         locationRequest = LocationRequest.create()
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
                 .setInterval(2000)
                 .setFastestInterval(2000)
 
-        // Request location updates
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return
-        }
         LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient,
                 locationRequest, this)
     }
@@ -218,6 +217,9 @@ class Main : AppCompatActivity(), GoogleApiClient.ConnectionCallbacks, GoogleApi
     //@Throws(SecurityException::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        Fresco.initialize(this)
+
         setContentView(R.layout.activity_main)
 
         ButterKnife.bind(this)
@@ -232,7 +234,22 @@ class Main : AppCompatActivity(), GoogleApiClient.ConnectionCallbacks, GoogleApi
 
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener)
 
-        checkLocation()
+        description.setOnTouchListener(View.OnTouchListener { view, motionEvent ->
+            scrollView.smoothScrollTo(0, description.top-500)
+
+            scrollView.post(Runnable { kotlin.run { description.requestFocus() } })
+            false
+        })
+
+//        description.setOnClickListener(View.OnClickListener {
+//            fun onTouchEvent(event: MotionEvent?): Boolean {
+//
+//                scrollView.smoothScrollTo(0, description.getTop())
+//
+//                scrollView.post(Runnable { kotlin.run { description.requestFocus() } })
+//                return false
+//            }
+//        })
 
         fab_capture?.setOnClickListener { validatePermissions() }
     }
@@ -270,20 +287,23 @@ class Main : AppCompatActivity(), GoogleApiClient.ConnectionCallbacks, GoogleApi
     override fun onResume() {
         super.onResume()
 
-//        if (requestingLocationUpdates)
-//            startLocationUpdates()
-
-
-//        if (isLocationEnabled(this)) {
-//            if (googleApiClient != null && googleApiClient!!.isConnected()) {
-//                startLocationUpdates()
-//            }
+//        if (isLocationEnabled()) {
+        if (googleApiClient != null && googleApiClient!!.isConnected()) {
+            startLocationUpdates()
+        }
 //        }
     }
 
     override fun onPause() {
         super.onPause()
-        stopLocationUpdates()
+        //stopLocationUpdates()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (googleApiClient != null && googleApiClient!!.isConnected()) {
+            googleApiClient!!.disconnect()
+        }
     }
 
     private fun stopLocationUpdates() {
@@ -358,9 +378,12 @@ class Main : AppCompatActivity(), GoogleApiClient.ConnectionCallbacks, GoogleApi
 
     private var mCurrentPhotoPath : String = ""
 
+    companion object {
+        var primaryPath:String = ""
+    }
+
 //    var TAKE_PHOTO_REQUEST : Int = 3223
     private val REQUEST_IMAGE_CAPTURE = 1273
-
 
     private fun launchCamera() {
         val values = ContentValues(1)
@@ -371,6 +394,8 @@ class Main : AppCompatActivity(), GoogleApiClient.ConnectionCallbacks, GoogleApi
         val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
         if(intent.resolveActivity(packageManager) != null) {
             this.mCurrentPhotoPath = fileUri.toString()
+
+            primaryPath = fileUri.toString()
 
 //            Log.i("EREREr", this.mCurrentPhotoPath)
 
@@ -392,17 +417,17 @@ class Main : AppCompatActivity(), GoogleApiClient.ConnectionCallbacks, GoogleApi
         if (resultCode == Activity.RESULT_OK
                 && requestCode == REQUEST_IMAGE_CAPTURE) {
 
-            processCapturedPhoto(data)
+            processCapturedPhoto()
         } else {
             super.onActivityResult(requestCode, resultCode, data)
         }
     }
 
-    private fun processCapturedPhoto(data: Intent?) {
+    private fun processCapturedPhoto() {
 
-        Log.i("EREREr", data!!.extras.toString())
+//        Log.i("EREREr", data!!.extras.toString())
         //        val cursor = contentResolver.query(Uri.parse("content://media/external/images/media/395"),
-        val cursor = contentResolver.query(Uri.parse(this.mCurrentPhotoPath),
+        val cursor = contentResolver.query(Uri.parse(primaryPath),
                 Array(1) {android.provider.MediaStore.Images.ImageColumns.DATA},
                 null, null, null)
 
@@ -420,11 +445,13 @@ class Main : AppCompatActivity(), GoogleApiClient.ConnectionCallbacks, GoogleApi
                     .setResizeOptions(ResizeOptions(width, height))
                     .build()
 
+//            imgv_photo.setImageURI(uri)
+
             val controller = Fresco.newDraweeControllerBuilder()
                     .setOldController(imgv_photo?.controller)
                     .setImageRequest(request)
                     .build()
-
+//
             imgv_photo?.controller = controller
         }
     }
